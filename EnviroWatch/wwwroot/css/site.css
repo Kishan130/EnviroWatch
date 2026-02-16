@@ -1,0 +1,29 @@
+/* EnviroWatch Custom Styles */
+.navbar-brand {
+    font-size: 1.5rem;
+    font-weight: bold;
+}
+
+.card {
+    border-radius: 10px;
+    transition: transform 0.2s;
+}
+
+    .card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    }
+
+.badge {
+    font-size: 2rem;
+    padding: 15px 30px;
+    border-radius: 8px;
+}
+
+#loading {
+    min-height: 300px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}

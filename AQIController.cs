@@ -22,9 +22,16 @@ namespace EnviroWatch.Controllers
             return Ok(new
             {
                 data,
+
                 category = _aqiService.GetAQICategory(data.AQI),
                 color = _aqiService.GetAQIColor(data.AQI)
             });
+
+                category = _aqiService.GetAQICategory(data.AQIValue ?? 0),
+                color = _aqiService.GetAQIColor(data.AQIValue ?? 0)
+            });
+
+
         }
 
         [HttpGet("historical/{districtId}/{days}")]

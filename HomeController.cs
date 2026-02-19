@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using EnviroWatch.Models;
+
+using EnviroWatch.Data;
 using Microsoft.EntityFrameworkCore;
 
 namespace EnviroWatch.Controllers

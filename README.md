@@ -69,8 +69,8 @@
 
 ## 👥 Authors
 
-- **Kishan Patel** - Lead Developer
-- **[Friend's Name]** - Project Collaborator
+- **Kishan Vachhani** - Lead Developer
+- **Rajnish Sinh** - Developer Collaborator
 
 ---
 

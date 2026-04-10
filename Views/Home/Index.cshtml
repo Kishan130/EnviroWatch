@@ -1,0 +1,172 @@
+@{
+    ViewData["Title"] = "Home";
+}
+
+<div class="home-layout">
+    <!-- Map Container (70%) -->
+    <div class="map-container">
+        <div id="mapView"></div>
+
+        <!-- City Search Overlay -->
+        <div class="city-selector-overlay">
+            <input type="text" class="city-search" id="citySearch" placeholder="🔍 Search Indian cities..." autocomplete="off" />
+            <div class="city-search-dropdown" id="citySearchDropdown"></div>
+        </div>
+
+        <!-- Map Controls -->
+        <div class="map-controls">
+            <button class="map-control-btn" id="toggleHeatmap" title="Toggle AQI Heatmap">
+                <i class="fas fa-fire"></i> Heatmap
+            </button>
+            <button class="map-control-btn" id="refreshMap" title="Refresh Data">
+                <i class="fas fa-sync-alt"></i> Refresh
+            </button>
+        </div>
+    </div>
+
+    <!-- Info Panel (30%) -->
+    <div class="info-panel" id="infoPanel">
+        <!-- Placeholder -->
+        <div class="panel-placeholder" id="panelPlaceholder">
+            <i class="fas fa-map-marker-alt"></i>
+            <h3>Select a City</h3>
+            <p>Click a marker on the map or search for a city to view its air quality and weather information.</p>
+            <div class="aqi-disclaimer" style="margin-top: 16px; font-size: 0.75rem; color: var(--text-muted); background: rgba(0,0,0,0.2); border-radius: 8px; padding: 10px; text-align: left;">
+                <i class="fas fa-info-circle" style="color: var(--accent);"></i>
+                <strong>Note:</strong> AQI values are calculated from real-time pollutant concentrations via OpenWeatherMap. Official CPCB AQI uses 24-hour averages, so values may differ.
+            </div>
+        </div>
+
+        <!-- City Info (hidden by default) -->
+        <div id="cityInfo" style="display: none;">
+            <div class="info-panel-header">
+                <div class="city-name-display" id="cityName">India</div>
+                <div class="city-state-display" id="cityState">India</div>
+
+                <!-- Tabs -->
+                <div class="tab-container">
+                    <button class="tab-btn active" data-tab="aqi-tab" onclick="switchTab(this, 'aqi-tab')">
+                        <i class="fas fa-lungs"></i> AQI
+                    </button>
+                    <button class="tab-btn" data-tab="weather-tab" onclick="switchTab(this, 'weather-tab')">
+                        <i class="fas fa-cloud-sun"></i> Weather
+                    </button>
+                </div>
+            </div>
+
+            <div class="info-panel-body">
+                <!-- AQI Tab -->
+                <div class="tab-panel active" id="aqi-tab">
+                    <div class="text-center mb-16">
+                        <div class="aqi-ring" id="aqiRing">
+                            <div class="aqi-big-value" id="aqiValue">--</div>
+                        </div>
+                        <div class="aqi-category-badge" id="aqiCategory">Loading...</div>
+                    </div>
+
+                    <div class="pollutant-grid">
+                        <div class="pollutant-item">
+                            <div class="pollutant-label">PM2.5</div>
+                            <div class="pollutant-value" id="pm25Val">--</div>
+                            <div class="pollutant-unit">µg/m³</div>
+                        </div>
+                        <div class="pollutant-item">
+                            <div class="pollutant-label">PM10</div>
+                            <div class="pollutant-value" id="pm10Val">--</div>
+                            <div class="pollutant-unit">µg/m³</div>
+                        </div>
+                        <div class="pollutant-item">
+                            <div class="pollutant-label">O₃</div>
+                            <div class="pollutant-value" id="o3Val">--</div>
+                            <div class="pollutant-unit">µg/m³</div>
+                        </div>
+                        <div class="pollutant-item">
+                            <div class="pollutant-label">NO₂</div>
+                            <div class="pollutant-value" id="no2Val">--</div>
+                            <div class="pollutant-unit">µg/m³</div>
+                        </div>
+                        <div class="pollutant-item">
+                            <div class="pollutant-label">SO₂</div>
+                            <div class="pollutant-value" id="so2Val">--</div>
+                            <div class="pollutant-unit">µg/m³</div>
+                        </div>
+                        <div class="pollutant-item">
+                            <div class="pollutant-label">CO</div>
+                            <div class="pollutant-value" id="coVal">--</div>
+                            <div class="pollutant-unit">µg/m³</div>
+                        </div>
+                    </div>
+
+                    <div class="pollutant-item text-center mb-16">
+                        <div class="pollutant-label">Dominant Pollutant</div>
+                        <div class="pollutant-value" id="dominantPollutant" style="color: var(--accent);">--</div>
+                    </div>
+                </div>
+
+                <!-- Weather Tab -->
+                <div class="tab-panel" id="weather-tab">
+                    <div class="text-center mb-16">
+                        <img id="weatherIconImg" src="" alt="Weather" class="weather-icon-large" style="width: 64px; height: 64px;" />
+                        <div>
+                            <span class="temp-big" id="tempValue">--</span>
+                            <span class="temp-unit">°C</span>
+                        </div>
+                        <div class="text-muted" id="feelsLikeValue" style="font-size: 0.85rem;">Feels like --°C</div>
+                        <div class="text-muted" id="weatherDescription" style="font-size: 0.85rem; text-transform: capitalize;">--</div>
+                    </div>
+
+                    <div class="weather-details-grid">
+                        <div class="weather-detail">
+                            <div class="weather-detail-label"><i class="fas fa-tint"></i> Humidity</div>
+                            <div class="weather-detail-value" id="humidityVal">--%</div>
+                        </div>
+                        <div class="weather-detail">
+                            <div class="weather-detail-label"><i class="fas fa-wind"></i> Wind</div>
+                            <div class="weather-detail-value" id="windVal">-- m/s</div>
+                        </div>
+                        <div class="weather-detail">
+                            <div class="weather-detail-label"><i class="fas fa-compress-arrows-alt"></i> Pressure</div>
+                            <div class="weather-detail-value" id="pressureVal">-- hPa</div>
+                        </div>
+                        <div class="weather-detail">
+                            <div class="weather-detail-label"><i class="fas fa-eye"></i> Visibility</div>
+                            <div class="weather-detail-value" id="visibilityVal">-- km</div>
+                        </div>
+                        <div class="weather-detail">
+                            <div class="weather-detail-label"><i class="fas fa-cloud"></i> Clouds</div>
+                            <div class="weather-detail-value" id="cloudsVal">--%</div>
+                        </div>
+                        <div class="weather-detail">
+                            <div class="weather-detail-label"><i class="fas fa-compass"></i> Wind Dir</div>
+                            <div class="weather-detail-value" id="windDirVal">--°</div>
+                        </div>
+                        <div class="weather-detail">
+                            <div class="weather-detail-label"><i class="fas fa-sun"></i> Sunrise</div>
+                            <div class="weather-detail-value" id="sunriseVal">--</div>
+                        </div>
+                        <div class="weather-detail">
+                            <div class="weather-detail-label"><i class="fas fa-moon"></i> Sunset</div>
+                            <div class="weather-detail-value" id="sunsetVal">--</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recommendation (shown in both tabs) -->
+                <div class="recommendation-box" id="recommendationBox" style="display: none;">
+                    <div class="verdict-text" id="verdictText">--</div>
+                    <div class="recommendation-summary" id="overallSummary">--</div>
+                    <div class="divider"></div>
+                    <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 6px;">
+                        <i class="fas fa-temperature-high"></i> Heat Index: <strong id="heatIndexVal">--</strong>°C
+                        (<span id="heatIndexCat">--</span>)
+                    </div>
+                    <ul class="dos-donts-list" id="dosAndDontsList"></ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/map.js?v=@DateTime.Now.Ticks"></script>
+}

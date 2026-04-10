@@ -1,0 +1,149 @@
+@using System.Security.Claims
+@{
+    ViewData["Title"] = "Subscriptions";
+    var userEmail = User.FindFirst(ClaimTypes.Email)?.Value ?? User.Identity?.Name ?? "";
+}
+
+<div class="subscriptions-page fade-in">
+    <h1 class="analysis-title mb-24"><i class="fas fa-bell" style="color: var(--accent);"></i> AQI Alert Subscriptions</h1>
+    <p class="text-muted mb-24">Get alerted when air quality drops below safe levels in your city. You are logged in as <strong>@userEmail</strong>.</p>
+
+    <!-- Subscribe Form -->
+    <div class="sub-form-card">
+        <h3 style="margin-bottom: 16px;">📧 Subscribe to Alerts</h3>
+
+        <input type="hidden" id="subEmail" value="@userEmail" />
+
+        <div class="form-group">
+            <label class="form-label" for="subCity">City</label>
+            <select class="form-input" id="subCity" required>
+                <option value="">Select a city...</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label" for="subThreshold">AQI Alert Threshold</label>
+            <select class="form-input" id="subThreshold">
+                <option value="100">AQI > 100 (Moderate)</option>
+                <option value="200" selected>AQI > 200 (Poor)</option>
+                <option value="300">AQI > 300 (Very Poor)</option>
+                <option value="400">AQI > 400 (Severe)</option>
+            </select>
+        </div>
+
+        <button class="btn btn-primary" id="subscribeBtn" style="width: 100%;">
+            <i class="fas fa-bell"></i> Subscribe
+        </button>
+
+        <div id="subMessage" style="margin-top: 12px; font-size: 0.85rem;"></div>
+    </div>
+
+    <!-- My Subscriptions -->
+    <div class="sub-form-card">
+        <h3 style="margin-bottom: 16px;">🔍 Your Subscriptions</h3>
+        <ul class="sub-list" id="subList">
+            <li class="sub-item text-muted">Loading...</li>
+        </ul>
+    </div>
+
+    <!-- AQI Guide -->
+    <div class="glass-card">
+        <h3 style="margin-bottom: 12px;"><i class="fas fa-info-circle" style="color: var(--accent);"></i> AQI Level Guide</h3>
+        <table class="ranking-table">
+            <thead>
+                <tr><th>AQI Range</th><th>Category</th><th>Health Impact</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>0–50</td><td><span class="aqi-pill aqi-bg-good">Good</span></td><td>Minimal impact</td></tr>
+                <tr><td>51–100</td><td><span class="aqi-pill aqi-bg-satisfactory">Satisfactory</span></td><td>Minor discomfort to sensitive people</td></tr>
+                <tr><td>101–200</td><td><span class="aqi-pill aqi-bg-moderate">Moderate</span></td><td>Discomfort to people with lung/heart disease</td></tr>
+                <tr><td>201–300</td><td><span class="aqi-pill aqi-bg-poor">Poor</span></td><td>Discomfort to most people on prolonged exposure</td></tr>
+                <tr><td>301–400</td><td><span class="aqi-pill aqi-bg-very-poor">Very Poor</span></td><td>Respiratory illness on prolonged exposure</td></tr>
+                <tr><td>401–500</td><td><span class="aqi-pill aqi-bg-severe">Severe</span></td><td>Health emergency, affects healthy people too</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        const userEmail = '@Html.Raw(userEmail)';
+
+        $(document).ready(function () {
+            // Load cities
+            $.getJSON('/api/districts', function (data) {
+                data.forEach(d => {
+                    $('#subCity').append(`<option value="${d.id}">${d.name}, ${d.state}</option>`);
+                });
+            });
+
+            // Auto-load user's subscriptions
+            loadSubscriptions();
+
+            // Subscribe
+            $('#subscribeBtn').on('click', function () {
+                const districtId = parseInt($('#subCity').val());
+                const threshold = parseInt($('#subThreshold').val());
+
+                if (!districtId) {
+                    $('#subMessage').html('<span style="color: var(--accent-red);">Please select a city.</span>');
+                    return;
+                }
+
+                $.ajax({
+                    url: '/api/subscriptions',
+                    method: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({ email: userEmail, districtId, aqiThreshold: threshold }),
+                    success: function (res) {
+                        $('#subMessage').html(`<span style="color: var(--accent-green);">✅ ${res.message}</span>`);
+                        $('#subCity').val('');
+                        loadSubscriptions();
+                    },
+                    error: function (xhr) {
+                        const err = xhr.responseJSON?.error || 'Something went wrong';
+                        $('#subMessage').html(`<span style="color: var(--accent-red);">❌ ${err}</span>`);
+                    }
+                });
+            });
+        });
+
+        function loadSubscriptions() {
+            $.getJSON(`/api/subscriptions?email=${encodeURIComponent(userEmail)}`, function (data) {
+                const $list = $('#subList');
+                $list.empty();
+
+                if (data.length === 0) {
+                    $list.html('<li class="sub-item text-muted">No subscriptions yet. Subscribe to a city above!</li>');
+                    return;
+                }
+
+                data.forEach(s => {
+                    $list.append(`
+                        <li class="sub-item">
+                            <div>
+                                <strong>${s.districtName}</strong>
+                                <div class="text-muted" style="font-size: 0.8rem;">
+                                    Alert when AQI > ${s.aqiThreshold} | Since ${s.createdAt}
+                                </div>
+                            </div>
+                            <button class="btn btn-danger btn-sm" onclick="unsubscribe(${s.id})">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </li>
+                    `);
+                });
+            });
+        }
+
+        function unsubscribe(id) {
+            $.ajax({
+                url: `/api/subscriptions/${id}`,
+                method: 'DELETE',
+                success: function () {
+                    loadSubscriptions();
+                }
+            });
+        }
+    </script>
+}

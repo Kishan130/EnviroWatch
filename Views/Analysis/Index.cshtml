@@ -1,0 +1,214 @@
+@{
+    ViewData["Title"] = "Analysis";
+}
+
+<div class="analysis-page fade-in">
+    <!-- Header -->
+    <div class="analysis-header">
+        <div>
+            <h1 class="analysis-title"><i class="fas fa-chart-line" style="color: var(--accent);"></i> Air Quality & Weather Analysis</h1>
+            <p class="text-muted" style="font-size: 0.85rem;">Comprehensive environmental data analysis for India</p>
+        </div>
+        <div class="analysis-controls">
+            <select class="select-styled" id="citySelector">
+                <option value="">🇮🇳 India Overview</option>
+            </select>
+            <select class="select-styled" id="periodSelector" style="min-width: 120px;">
+                <option value="7">Last 7 Days</option>
+                <option value="30">Last 30 Days</option>
+            </select>
+            <div class="export-btn-group" id="exportBtns" style="display: none;">
+                <a id="exportCsvBtn" class="btn btn-glass btn-sm" href="#"><i class="fas fa-file-csv"></i> CSV</a>
+                <a id="exportPdfBtn" class="btn btn-glass btn-sm" href="#"><i class="fas fa-file-pdf"></i> PDF</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="stats-grid" id="statsGrid">
+        <div class="stat-card">
+            <div class="stat-card-icon" style="color: var(--accent);">📊</div>
+            <div class="stat-card-value" id="statAvgAqi">--</div>
+            <div class="stat-card-label">Avg AQI</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-card-icon" style="color: var(--accent-amber);">🌡</div>
+            <div class="stat-card-value" id="statAvgTemp">--</div>
+            <div class="stat-card-label">Avg Temperature</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-card-icon" style="color: #60a5fa;">💧</div>
+            <div class="stat-card-value" id="statAvgHumidity">--</div>
+            <div class="stat-card-label">Avg Humidity</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-card-icon" style="color: var(--accent-green);">🏙</div>
+            <div class="stat-card-value" id="statCities">--</div>
+            <div class="stat-card-label">Cities Monitored</div>
+        </div>
+    </div>
+
+    <!-- India Overview Section -->
+    <div id="indiaOverview">
+        <!-- Top 10 Metro AQI -->
+        <div class="section-title"><i class="fas fa-city"></i> Top 10 Metro Cities — AQI Rankings</div>
+        <div class="charts-grid mb-24">
+            <div class="chart-card">
+                <div class="chart-card-title"><i class="fas fa-chart-bar"></i> Metro City AQI</div>
+                <div class="chart-wrapper">
+                    <canvas id="metroAqiChart"></canvas>
+                </div>
+            </div>
+            <div class="chart-card">
+                <div class="chart-card-title"><i class="fas fa-smog"></i> Most Polluted Metro Cities</div>
+                <div id="topPollutedTable">
+                    <table class="ranking-table">
+                        <thead>
+                            <tr><th>#</th><th>City</th><th>AQI</th><th>Category</th><th>Dominant</th></tr>
+                        </thead>
+                        <tbody id="topPollutedBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- National Trends -->
+        <div class="section-title"><i class="fas fa-chart-area"></i> National Trends</div>
+        <div class="charts-grid mb-24">
+            <div class="chart-card">
+                <div class="chart-card-title"><i class="fas fa-lungs"></i> Average AQI Trend</div>
+                <div class="chart-wrapper">
+                    <canvas id="nationalAqiTrendChart"></canvas>
+                </div>
+            </div>
+            <div class="chart-card">
+                <div class="chart-card-title"><i class="fas fa-temperature-high"></i> Average Temperature Trend</div>
+                <div class="chart-wrapper">
+                    <canvas id="nationalTempTrendChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- City Detail Section (hidden by default) -->
+    <div id="cityDetail" style="display: none;">
+        <div class="section-title">
+            <i class="fas fa-map-marker-alt"></i>
+            <span id="detailCityName">City</span> — Detailed Analysis
+        </div>
+
+        <!-- City current stats -->
+        <div class="stats-grid mb-24" id="cityStatsGrid">
+            <div class="stat-card">
+                <div class="stat-card-icon">📊</div>
+                <div class="stat-card-value" id="cityAvgAqi">--</div>
+                <div class="stat-card-label">Average AQI</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-card-icon">📈</div>
+                <div class="stat-card-value" id="cityMaxAqi">--</div>
+                <div class="stat-card-label">Peak AQI</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-card-icon">📉</div>
+                <div class="stat-card-value" id="cityMinAqi">--</div>
+                <div class="stat-card-label">Min AQI</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-card-icon">🌡</div>
+                <div class="stat-card-value" id="cityAvgTemp">--</div>
+                <div class="stat-card-label">Avg Temperature</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-card-icon">🔥</div>
+                <div class="stat-card-value" id="cityMaxTemp">--</div>
+                <div class="stat-card-label">Max Temperature</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-card-icon">📋</div>
+                <div class="stat-card-value" id="cityDataPoints">--</div>
+                <div class="stat-card-label">Data Points</div>
+            </div>
+        </div>
+
+        <!-- City Charts -->
+        <div class="charts-grid mb-24">
+            <div class="chart-card">
+                <div class="chart-card-title"><i class="fas fa-lungs"></i> AQI Trend</div>
+                <div class="chart-wrapper">
+                    <canvas id="cityAqiTrendChart"></canvas>
+                </div>
+            </div>
+            <div class="chart-card">
+                <div class="chart-card-title"><i class="fas fa-temperature-high"></i> Temperature & Humidity</div>
+                <div class="chart-wrapper">
+                    <canvas id="cityTempHumidityChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Weather Fallback (shown when no historical weather data) -->
+        <div id="noWeatherData" class="glass-card mb-24" style="display: none;"></div>
+
+        <div class="charts-grid mb-24">
+            <div class="chart-card">
+                <div class="chart-card-title"><i class="fas fa-vial"></i> Pollutant Breakdown</div>
+                <div class="chart-wrapper">
+                    <canvas id="pollutantBreakdownChart"></canvas>
+                </div>
+            </div>
+            <div class="chart-card">
+                <div class="chart-card-title"><i class="fas fa-chart-pie"></i> AQI Category Distribution</div>
+                <div class="chart-wrapper">
+                    <canvas id="categoryDistChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="charts-grid mb-24">
+            <div class="chart-card">
+                <div class="chart-card-title"><i class="fas fa-wind"></i> Wind Speed Trend</div>
+                <div class="chart-wrapper">
+                    <canvas id="cityWindChart"></canvas>
+                </div>
+            </div>
+            <div class="chart-card">
+                <div class="chart-card-title"><i class="fas fa-chart-bar"></i> Pollutant Averages</div>
+                <div class="chart-wrapper">
+                    <canvas id="pollutantAvgChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- City Comparison (Dynamic add/remove) -->
+        <div class="comparison-section glass-card mb-24">
+            <div class="section-title"><i class="fas fa-balance-scale"></i> City Comparison</div>
+            <div id="compareCityList" style="margin-bottom: 12px;">
+                <div class="compare-city-row" style="display:flex; gap:8px; align-items:center; margin-bottom:8px;">
+                    <select class="select-styled compare-city-select" style="min-width: 150px; flex:1;">
+                        <option value="">Select City</option>
+                    </select>
+                </div>
+                <div class="compare-city-row" style="display:flex; gap:8px; align-items:center; margin-bottom:8px;">
+                    <select class="select-styled compare-city-select" style="min-width: 150px; flex:1;">
+                        <option value="">Select City</option>
+                    </select>
+                </div>
+            </div>
+            <div class="analysis-controls mb-16">
+                <button class="btn btn-glass btn-sm" id="addCompareCity"><i class="fas fa-plus"></i> Add City</button>
+                <button class="btn btn-primary btn-sm" id="compareBtn"><i class="fas fa-search"></i> Compare</button>
+            </div>
+            <div class="comparison-cards" id="comparisonCards"></div>
+        </div>
+    </div>
+
+    <!-- Loading -->
+    <div class="loading-spinner" id="analysisLoader" style="display: none;">
+        <div class="spinner"></div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/analysis.js"></script>
+}

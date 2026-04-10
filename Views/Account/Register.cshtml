@@ -1,0 +1,94 @@
+@{
+    Layout = "~/Views/Shared/_AuthLayout.cshtml";
+    ViewData["Title"] = "Register";
+}
+
+<div class="auth-page fade-in">
+    <div class="auth-card glass-card">
+        <div class="auth-header">
+            <i class="fas fa-leaf" style="color: var(--accent-green); font-size: 2rem;"></i>
+            <h1 class="auth-title">Create Account</h1>
+            <p class="text-muted" style="font-size: 0.85rem;">Join EnviroWatch — monitor air quality and get alerts</p>
+        </div>
+
+        @if (ViewData["Error"] != null)
+        {
+            <div class="auth-error">
+                <i class="fas fa-exclamation-circle"></i> @ViewData["Error"]
+            </div>
+        }
+
+        <form method="post" asp-controller="Account" asp-action="Register">
+            @Html.AntiForgeryToken()
+
+            <div class="form-group">
+                <label class="form-label" for="fullName"><i class="fas fa-user"></i> Full Name</label>
+                <input type="text" class="form-input" id="fullName" name="fullName" placeholder="Your name" required />
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="email"><i class="fas fa-envelope"></i> Email</label>
+                <input type="email" class="form-input" id="email" name="email" placeholder="you@example.com" required />
+            </div>
+
+            <div class="form-row">
+                <div class="form-group" style="flex:1;">
+                    <label class="form-label" for="password"><i class="fas fa-lock"></i> Password</label>
+                    <input type="password" class="form-input" id="password" name="password" placeholder="Min 6 chars" required minlength="6" />
+                </div>
+                <div class="form-group" style="flex:1;">
+                    <label class="form-label" for="confirmPassword"><i class="fas fa-lock"></i> Confirm</label>
+                    <input type="password" class="form-input" id="confirmPassword" name="confirmPassword" placeholder="Repeat password" required />
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group" style="flex:1;">
+                    <label class="form-label" for="phone"><i class="fas fa-phone"></i> Phone (SMS alerts)</label>
+                    <input type="tel" class="form-input" id="phone" name="phone" placeholder="+91 98765 43210" />
+                </div>
+                <div class="form-group" style="flex:1;">
+                    <label class="form-label" for="residenceCityId"><i class="fas fa-city"></i> Residence City</label>
+                    <select class="form-input" id="residenceCityId" name="residenceCityId">
+                        <option value="">Select city...</option>
+                    </select>
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary auth-btn">
+                <i class="fas fa-user-plus"></i> Create Account
+            </button>
+        </form>
+
+        <div class="auth-divider">
+            <span>or sign up with</span>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 10px;">
+            <a href="/Account/GoogleLogin" class="btn btn-google auth-btn">
+                <i class="fab fa-google"></i> Sign up with Google
+            </a>
+
+            <a href="/Account/GitHubLogin" class="btn btn-dark auth-btn">
+                <i class="fab fa-github"></i> Sign up with GitHub
+            </a>
+        </div>
+
+        <div class="auth-footer">
+            Already have an account? <a href="/Account/Login" class="auth-link">Sign In</a>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            $.getJSON('/api/districts', function (data) {
+                const sorted = data.sort((a, b) => a.name.localeCompare(b.name));
+                sorted.forEach(d => {
+                    $('#residenceCityId').append(`<option value="${d.id}">${d.name}, ${d.state}</option>`);
+                });
+            });
+        });
+    </script>
+}

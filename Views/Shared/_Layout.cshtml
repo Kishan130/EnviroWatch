@@ -1,0 +1,267 @@
+@using System.Security.Claims
+@{
+    var fullName = "";
+    var userEmail = "";
+    var avatarUrl = "";
+    if (User.Identity?.IsAuthenticated == true)
+    {
+        fullName = User.FindFirst("FullName")?.Value ?? "";
+        userEmail = User.FindFirst(ClaimTypes.Email)?.Value ?? User.Identity.Name ?? "";
+        avatarUrl = User.FindFirst("AvatarUrl")?.Value ?? "";
+        if (string.IsNullOrEmpty(fullName)) fullName = User.Identity.Name ?? "";
+    }
+}
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - EnviroWatch</title>
+    <meta name="description" content="EnviroWatch - India's AQI & Weather Monitoring Dashboard. Track air quality, weather trends, and get health recommendations for 35+ Indian cities." />
+
+    <!-- Prevent flash: apply saved theme before render -->
+    <script>
+        (function() {
+            var saved = localStorage.getItem('envirowatch-theme');
+            if (saved === 'dark' || saved === 'light') {
+                document.documentElement.setAttribute('data-theme', saved);
+            }
+        })();
+    </script>
+
+    <!-- Google Fonts: Inter + Outfit -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+
+    <!-- Font Awesome 6 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+
+    <!-- Leaflet.js -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <!-- Leaflet Heat -->
+    <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
+
+    <!-- Leaflet MarkerCluster -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
+    <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="~/css/site.css?v=@DateTime.Now.Ticks" />
+
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="~/manifest.json" />
+    <meta name="theme-color" content="#f0f4f8" id="metaThemeColor" />
+</head>
+<body>
+    <!-- Force reload if browser serves a stale bfcache page (keeps auth state current) -->
+    <script>window.addEventListener('pageshow', function(e) { if (e.persisted) location.reload(); });</script>
+
+    <!-- Navigation -->
+    <nav class="navbar" id="mainNav">
+        <div class="nav-container">
+            <a class="nav-brand" href="/">
+                <i class="fas fa-leaf"></i>
+                <span>EnviroWatch</span>
+            </a>
+
+            <button class="nav-toggle" id="navToggle" aria-label="Toggle navigation">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+
+            <div class="nav-links" id="navLinks">
+                <a href="/" class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Home" ? "active" : "")">
+                    <i class="fas fa-map-marked-alt"></i> Home
+                </a>
+                <a href="/Analysis" class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Analysis" ? "active" : "")">
+                    <i class="fas fa-chart-line"></i> Analysis
+                </a>
+                <a href="/Subscriptions" class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Subscriptions" ? "active" : "")">
+                    <i class="fas fa-bell"></i> Alerts
+                </a>
+            </div>
+
+            <div class="nav-right">
+                <!-- Theme Toggle -->
+                <button class="theme-toggle" id="themeToggle" title="Toggle theme" aria-label="Toggle light/dark theme">
+                    <i class="fas fa-moon" id="themeIconMoon"></i>
+                    <i class="fas fa-sun theme-icon-hidden" id="themeIconSun"></i>
+                </button>
+
+                @if (User.Identity?.IsAuthenticated == true)
+                {
+                    <div class="user-profile" id="userProfileBtn">
+                        @if (!string.IsNullOrEmpty(avatarUrl))
+                        {
+                            <img src="@avatarUrl" alt="@fullName" class="user-avatar" />
+                        }
+                        else
+                        {
+                            <div class="user-avatar-placeholder">@(fullName.Length > 0 ? fullName[0].ToString().ToUpper() : "U")</div>
+                        }
+                        <span class="user-display-name">@fullName</span>
+
+                        <div class="user-dropdown" id="userDropdown">
+                            <div class="user-dropdown-header">
+                                <div class="user-dropdown-name">@fullName</div>
+                                <div class="user-dropdown-email">@userEmail</div>
+                            </div>
+                            <form asp-controller="Account" asp-action="Logout" method="post" style="margin:0;">
+                                <button type="submit" class="user-dropdown-action">
+                                    <i class="fas fa-sign-out-alt"></i> Sign Out
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <a href="/Account/Login" class="btn btn-sm btn-glass">
+                        <i class="fas fa-sign-in-alt"></i> Login
+                    </a>
+                }
+            </div>
+        </div>
+    </nav>
+
+    <!-- Success / Info Toast -->
+    @if (TempData["Success"] != null)
+    {
+        <div id="successToast" style="position:fixed;top:80px;right:20px;z-index:9999;background:linear-gradient(135deg,#00c896,#00a878);color:#fff;padding:14px 22px;border-radius:12px;box-shadow:0 8px 24px rgba(0,200,150,.35);display:flex;align-items:center;gap:10px;font-weight:600;animation:slideInRight .4s ease">
+            <i class="fas fa-check-circle" style="font-size:1.2rem;"></i>
+            <span>@TempData["Success"]</span>
+        </div>
+        <style>
+            @@keyframes slideInRight { from { transform: translateX(120%); opacity:0; } to { transform: translateX(0); opacity:1; } }
+        </style>
+        <script>setTimeout(() => { var t = document.getElementById('successToast'); if(t) t.style.opacity='0'; setTimeout(()=>{ if(t) t.remove(); },400); }, 3500);</script>
+    }
+
+    <!-- Main Content -->
+    <main class="main-content">
+        @RenderBody()
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer" id="mainFooter">
+        <div class="footer-container">
+            <div class="footer-brand">
+                <i class="fas fa-leaf"></i> EnviroWatch
+                <span class="footer-tagline">India's AQI & Weather Monitor</span>
+            </div>
+            <div class="footer-aqi-scale">
+                <span class="aqi-pill aqi-good">Good (0-50)</span>
+                <span class="aqi-pill aqi-satisfactory">Satisfactory (51-100)</span>
+                <span class="aqi-pill aqi-moderate">Moderate (101-200)</span>
+                <span class="aqi-pill aqi-poor">Poor (201-300)</span>
+                <span class="aqi-pill aqi-very-poor">Very Poor (301-400)</span>
+                <span class="aqi-pill aqi-severe">Severe (401-500)</span>
+            </div>
+            <div class="footer-copy">
+                © 2026 EnviroWatch. Data from OpenWeatherMap.
+            </div>
+        </div>
+    </footer>
+
+    <!-- Auto-refresh indicator -->
+    <div class="auto-refresh-indicator" id="autoRefreshIndicator" title="Auto-refreshes every 5 minutes">
+        <i class="fas fa-sync-alt"></i>
+        <span class="refresh-timer">5:00</span>
+    </div>
+
+    @await RenderSectionAsync("Scripts", required: false)
+
+    <script>
+        // ===== Theme Toggle =====
+        (function() {
+            const html = document.documentElement;
+            const toggleBtn = document.getElementById('themeToggle');
+            const moonIcon = document.getElementById('themeIconMoon');
+            const sunIcon = document.getElementById('themeIconSun');
+            const metaColor = document.getElementById('metaThemeColor');
+
+            function applyTheme(theme) {
+                html.setAttribute('data-theme', theme);
+                localStorage.setItem('envirowatch-theme', theme);
+                if (theme === 'dark') {
+                    moonIcon.classList.add('theme-icon-hidden');
+                    sunIcon.classList.remove('theme-icon-hidden');
+                    if (metaColor) metaColor.setAttribute('content', '#0a0f1c');
+                } else {
+                    sunIcon.classList.add('theme-icon-hidden');
+                    moonIcon.classList.remove('theme-icon-hidden');
+                    if (metaColor) metaColor.setAttribute('content', '#f0f4f8');
+                }
+                // Notify map.js if it has a theme change handler
+                if (typeof onThemeChanged === 'function') onThemeChanged(theme);
+            }
+
+            // Apply saved theme
+            const saved = localStorage.getItem('envirowatch-theme') || 'light';
+            applyTheme(saved);
+
+            toggleBtn?.addEventListener('click', function() {
+                const current = html.getAttribute('data-theme');
+                applyTheme(current === 'dark' ? 'light' : 'dark');
+            });
+        })();
+
+        // ===== User Dropdown =====
+        (function() {
+            const btn = document.getElementById('userProfileBtn');
+            const dropdown = document.getElementById('userDropdown');
+            if (btn && dropdown) {
+                btn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    dropdown.classList.toggle('show');
+                });
+                document.addEventListener('click', function(e) {
+                    if (!btn.contains(e.target)) {
+                        dropdown.classList.remove('show');
+                    }
+                });
+            }
+        })();
+
+        // ===== Mobile Nav Toggle =====
+        document.getElementById('navToggle')?.addEventListener('click', function() {
+            document.getElementById('navLinks')?.classList.toggle('open');
+            this.classList.toggle('active');
+        });
+
+        // ===== Auto-Refresh Timer (5 minutes) =====
+        let refreshInterval = 300;
+        let timer = refreshInterval;
+        const timerEl = document.querySelector('.refresh-timer');
+
+        setInterval(() => {
+            timer--;
+            if (timer <= 0) {
+                timer = refreshInterval;
+                if (typeof refreshData === 'function') refreshData();
+            }
+            const min = Math.floor(timer / 60);
+            const sec = timer % 60;
+            if (timerEl) timerEl.textContent = `${min}:${sec.toString().padStart(2, '0')}`;
+        }, 1000);
+    </script>
+
+    <!-- Service Worker Registration -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/service-worker.js')
+                .then(reg => console.log('SW registered:', reg.scope))
+                .catch(err => console.log('SW registration failed:', err));
+        }
+    </script>
+</body>
+</html>

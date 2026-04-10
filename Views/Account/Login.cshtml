@@ -1,0 +1,64 @@
+@{
+    Layout = "~/Views/Shared/_AuthLayout.cshtml";
+    ViewData["Title"] = "Login";
+}
+
+<div class="auth-page fade-in">
+    <div class="auth-card glass-card">
+        <div class="auth-header">
+            <i class="fas fa-leaf" style="color: var(--accent-green); font-size: 2rem;"></i>
+            <h1 class="auth-title">Welcome Back</h1>
+            <p class="text-muted" style="font-size: 0.85rem;">Sign in to EnviroWatch to manage your AQI alerts</p>
+        </div>
+
+        @if (ViewData["Error"] != null)
+        {
+            <div class="auth-error">
+                <i class="fas fa-exclamation-circle"></i> @ViewData["Error"]
+            </div>
+        }
+
+        <form method="post" asp-controller="Account" asp-action="Login">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="returnUrl" value="@ViewData["ReturnUrl"]" />
+
+            <div class="form-group">
+                <label class="form-label" for="email"><i class="fas fa-envelope"></i> Email</label>
+                <input type="email" class="form-input" id="email" name="email" placeholder="you@example.com" required autofocus />
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="password"><i class="fas fa-lock"></i> Password</label>
+                <input type="password" class="form-input" id="password" name="password" placeholder="••••••••" required />
+            </div>
+
+            <button type="submit" class="btn btn-primary auth-btn">
+                <i class="fas fa-sign-in-alt"></i> Sign In
+            </button>
+        </form>
+
+        <div class="auth-divider">
+            <span>or continue with</span>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 10px;">
+            <a asp-controller="Account"
+               asp-action="GoogleLogin"
+               asp-route-returnUrl="@(ViewData["ReturnUrl"] ?? "/")"
+               class="btn btn-google auth-btn">
+                <i class="fab fa-google"></i> Continue with Google
+            </a>
+
+            <a asp-controller="Account"
+               asp-action="GitHubLogin"
+               asp-route-returnUrl="@(ViewData["ReturnUrl"] ?? "/")"
+               class="btn btn-dark auth-btn">
+                <i class="fab fa-github"></i> Continue with GitHub
+            </a>
+        </div>
+
+        <div class="auth-footer">
+            Don't have an account? <a href="/Account/Register" class="auth-link">Create Account</a>
+        </div>
+    </div>
+</div>
